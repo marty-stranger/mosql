@@ -115,11 +115,14 @@ module MoSQL
 
         log.info("Importing for Mongo DB #{dbname}...")
         db = @mongo.db(dbname)
-        collections = db.collections.select { |c| spec.key?(c.name) }
+        collections = db.collections.select { |c| spec.key?(c.name) || (spec.keys.index { |k| k.to_s.end_with?('*') && c.name.to_s.start_with?(k[0...-1]) }) }
+	log.info("collections = #{collections.map(&:name)}")
 
         collections.each do |collection|
           ns = "#{dbname}.#{collection.name}"
-          import_collection(ns, collection, spec[collection.name][:meta][:filter])
+          log.info("1, 2 = #{collection.name}, #{spec.keys}")
+	  collection_spec = spec[collection.name] || spec[spec.keys.select { |k| k.to_s.end_with?('*') && collection.name.to_s.start_with?(k[0...-1]) }.first]
+          import_collection(ns, collection, collection_spec[:meta][:filter])
           exit(0) if @done
         end
       end

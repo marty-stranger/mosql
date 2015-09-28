@@ -130,6 +130,13 @@ module MoSQL
       unless spec = find_db(db)
         return nil
       end
+
+      spec.each do |name, schema|
+        if name.to_s.end_with?('*') and collection.start_with?(name.to_s[0...-1])
+	  return schema
+        end
+      end
+
       unless schema = spec[collection]
         log.debug("No mapping for ns: #{ns}")
         return nil
