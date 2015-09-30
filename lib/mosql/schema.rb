@@ -151,6 +151,10 @@ module MoSQL
     end
 
     def fetch_and_delete_dotted(obj, dotted)
+      if dotted.start_with?('$')
+        return JsonPath.new(dotted).on(obj)
+      end
+
       pieces = dotted.split(".")
       breadcrumbs = []
       while pieces.length > 1
