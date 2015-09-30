@@ -151,10 +151,6 @@ module MoSQL
     end
 
     def fetch_and_delete_dotted(obj, dotted)
-      if dotted.start_with?('$')
-        return JsonPath.new(dotted).on(obj)
-      end
-
       pieces = dotted.split(".")
       breadcrumbs = []
       while pieces.length > 1
@@ -191,6 +187,8 @@ module MoSQL
         # We need to look in the cloned original object, not in the version that
         # has had some fields deleted.
         fetch_exists(original, $1)
+      when /^\$/
+        JsonPath.new(source).on(original)
       else
         raise SchemaError.new("Unknown source: #{source}")
       end
@@ -232,20 +230,22 @@ module MoSQL
           v = fetch_special_source(obj, source, original)
         else
           v = fetch_and_delete_dotted(obj, source)
-          case v
-          when Hash
-            v = JSON.dump(Hash[v.map { |k,v| [k, transform_primitive(v)] }])
-          when Array
-            v = v.map { |it| transform_primitive(it) }
-            if col[:array_type]
-              v = Sequel.pg_array(v, col[:array_type])
-            else
-              v = JSON.dump(v)
-            end
-          else
-            v = transform_primitive(v, type)
-          end
         end
+
+        case v
+        when Hash
+          v = JSON.dump(Hash[v.map { |k,v| [k, transform_primitive(v)] }])
+        when Array
+          v = v.map { |it| transform_primitive(it) }
+          if col[:array_type]
+            v = Sequel.pg_array(v, col[:array_type])
+          else
+            v = JSON.dump(v)
+          end
+        else
+          v = transform_primitive(v, type)
+        end
+
         row << v
       end
 
