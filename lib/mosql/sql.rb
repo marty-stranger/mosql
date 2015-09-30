@@ -11,7 +11,7 @@ module MoSQL
     end
 
     def connect_db(uri, pgschema)
-      @db = Sequel.connect(uri, :after_connect => proc do |conn|
+      @db = Sequel.connect(uri, :client_min_messages => false, :force_standard_strings => false, :after_connect => proc do |conn|
                              if pgschema
                                begin
                                  conn.execute("CREATE SCHEMA \"#{pgschema}\"")
